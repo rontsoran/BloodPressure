@@ -130,3 +130,43 @@ SELECT *
 FROM dbo.AlarmingRate
 ORDER BY PatientID, RecordDate;
 GO
+
+
+
+-- 10. Drop HeartRateAlerts if exists
+IF OBJECT_ID('dbo.HeartRateAlerts', 'U') IS NOT NULL
+  DROP TABLE dbo.HeartRateAlerts;
+GO
+
+-- 11. Create HeartRateAlerts table
+CREATE TABLE dbo.HeartRateAlerts (
+  RecordID INT IDENTITY(1, 1) PRIMARY KEY,
+  PatientID INT NOT NULL,
+  PatientName NVARCHAR(30) NULL,
+  RecordDate DATE NOT NULL,
+  DaysFromSurgery INT NULL,
+  DayDescription NVARCHAR(30) NULL,
+  HeartRate INT NOT NULL,
+  HeartRateIndicator NVARCHAR(20) NOT NULL
+);
+GO
+
+-- 12. Insert extremely high/low heart rate records
+-- Assumed thresholds: <= 40 bpm (extremely low), >= 130 bpm (extremely high)
+INSERT INTO dbo.HeartRateAlerts
+  (PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, HeartRate, HeartRateIndicator)
+SELECT
+  PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, HeartRate,
+  CASE
+    WHEN HeartRate <= 40 THEN 'Extremely Low'
+    WHEN HeartRate >= 130 THEN 'Extremely High'
+  END AS HeartRateIndicator
+FROM dbo.BloodPressureRecords
+WHERE HeartRate <= 40 OR HeartRate >= 130;
+GO
+
+-- 13. View HeartRateAlerts table
+SELECT *
+FROM dbo.HeartRateAlerts
+ORDER BY PatientID, RecordDate;
+GO
