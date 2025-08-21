@@ -1,10 +1,13 @@
 
-This document contains the SQL script used to create sample blood pressure datasets around surgery dates, compute moving averages, and derive alert tables. You can run it in SQL Server Management Studio (SSMS) or any SQL Server-compatible environment.
+This document contains the SQL script used to create sample blood pressure datasets around surgery dates, compute moving averages, and derive alert tables (BP and another one for HR). You can run it in SQL Server Management Studio (SSMS) or any SQL Server-compatible environment.
 
 Notes:
-- The script starts with `USE SurgeryDB;`. Ensure the `SurgeryDB` database exists or change it to your target database.
-- The script drops tables if they exist and recreates them.
-- Review before running in production environments.
+The script starts with USE SurgeryDB;. Ensure the SurgeryDB database exists or change it to your target database.
+The script drops tables if they exist and recreates them.
+The tables have been updated; please check for high/low heart rate alerts.
+Review before running in production environments.
+
+
 
 ## Full SQL
 
