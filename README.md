@@ -1,187 +1,208 @@
+# Blood Pressure Monitoring System - README2
 
-This document contains the SQL script used to create sample blood pressure datasets around surgery dates, compute moving averages, and derive alert tables (BP and another one for HR). You can run it in SQL Server Management Studio (SSMS) or any SQL Server-compatible environment.
+## Overview
+This SQL-based blood pressure monitoring system is designed to track patient vital signs before and after surgery, with advanced risk assessment capabilities for identifying patients at risk of major heart attacks.
 
-Notes:
-The script starts with USE SurgeryDB;. Ensure the SurgeryDB database exists or change it to your target database.
-The script drops tables if they exist and recreates them.
-The tables have been updated; please check for high/low heart rate alerts.
-Review before running in production environments.
+## Database Structure
 
+### Main Tables
 
+#### 1. BloodPressureRecords
+**Primary table containing all patient blood pressure data**
+- **Purpose**: Stores comprehensive patient vital signs and demographics
+- **Key Features**:
+  - Patient identification and demographics
+  - Blood pressure readings (Systolic/Diastolic)
+  - Heart rate monitoring
+  - Surgery timeline tracking (days before/after)
+  - Moving average calculations for trend analysis
 
-## Full SQL
+**Key Columns**:
+- `PatientID`, `PatientName`, `Age`, `Gender`
+- `Systolic`, `Diastolic`, `HeartRate`
+- `RecordDate`, `DaysFromSurgery`, `DayDescription`
+- `AvgSystolic_Moving`, `AvgDiastolic_Moving`
 
+#### 2. AlarmingRate
+**Identifies unusual blood pressure patterns**
+- **Purpose**: Filters and flags abnormal blood pressure readings
+- **Criteria**: 
+  - Systolic ≥ 140 OR Diastolic ≥ 90 (High)
+  - Systolic ≤ 90 OR Diastolic ≤ 60 (Low)
+
+#### 3. HeartRateAlerts
+**Monitors extreme heart rate conditions**
+- **Purpose**: Identifies dangerously high or low heart rates
+- **Thresholds**:
+  - Extremely Low: ≤ 40 bpm
+  - Extremely High: ≥ 130 bpm
+
+#### 4. majorHeartAttackRisk
+**Advanced risk assessment for heart attack prevention**
+- **Purpose**: Identifies patients at high risk of major heart attacks
+- **Risk Criteria**:
+  - Age ≥ 45 (increased risk factor)
+  - High Blood Pressure (Systolic ≥ 140 OR Diastolic ≥ 90)
+  - High Heart Rate (≥ 100 bpm)
+
+## Risk Assessment System
+
+### Risk Levels
+1. **CRITICAL**
+   - Systolic ≥ 160 mmHg
+   - Diastolic ≥ 100 mmHg
+   - Heart Rate ≥ 120 bpm
+
+2. **HIGH**
+   - Systolic ≥ 140 mmHg
+   - Diastolic ≥ 90 mmHg
+   - Heart Rate ≥ 100 bpm
+
+3. **MODERATE**
+   - Other combinations meeting basic criteria
+
+### Risk Factors Analysis
+The system automatically categorizes risk factors:
+- `High BP + High HR + Age >= 45`
+- `High Systolic + High HR + Age >= 45`
+- `High Diastolic + High HR + Age >= 45`
+- `High BP + Age >= 45`
+- `High HR + Age >= 45`
+
+## Key Features
+
+### 1. Moving Average Calculations
+- Calculates 3-day moving averages for blood pressure trends
+- Helps identify gradual changes in patient condition
+- Provides context for individual readings
+
+### 2. Surgery Timeline Tracking
+- Tracks patient condition relative to surgery date
+- Identifies risk patterns before and after procedures
+- Enables preventive intervention strategies
+
+### 3. Comprehensive Risk Analysis
+- Multi-factor risk assessment
+- Detailed explanations for each risk classification
+- Normal range comparisons for clinical context
+
+### 4. Patient-Specific Reporting
+- Individual patient risk profiles
+- Timeline-based risk occurrence tracking
+- Detailed critical condition explanations
+
+## Usage Instructions
+
+### Running the System
+1. Execute the complete SQL script (`SQLFile1.sql`)
+2. The system will automatically:
+   - Create all necessary tables
+   - Populate with sample data
+   - Calculate moving averages
+   - Generate risk assessments
+
+### Key Queries
+
+#### View All Blood Pressure Records
 ```sql
--- ===========================================
--- Blood Pressure Records - Moving Average 1 Day Before/After Surgery
--- ===========================================
-
-USE SurgeryDB;
-GO
-
--- 1. Drop BloodPressureRecords if exists
-IF OBJECT_ID('dbo.BloodPressureRecords', 'U') IS NOT NULL
-    DROP TABLE dbo.BloodPressureRecords;
-GO
-
--- 2. Create BloodPressureRecords table
-CREATE TABLE dbo.BloodPressureRecords (
-    RecordID INT IDENTITY(1,1) PRIMARY KEY,
-    PatientID INT NOT NULL,
-    PatientName NVARCHAR(30) NULL,
-    RecordDate DATE NOT NULL,
-    DaysFromSurgery INT NULL,
-    DayDescription NVARCHAR(30) NULL,
-    Systolic INT NULL,
-    Diastolic INT NULL,
-    HeartRate INT NULL,
-    Age INT NULL,
-    Gender NVARCHAR(10) NULL,
-    Medication NVARCHAR(30) NULL,
-    Allergic NVARCHAR(30) NULL,
-    AvgSystolic_Moving DECIMAL(5,2) NULL,
-    AvgDiastolic_Moving DECIMAL(5,2) NULL
-);
-GO
-
--- 3. Insert sample records
-INSERT INTO dbo.BloodPressureRecords
-(PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic)
-VALUES
-(1, 'Patient_1', '2025-08-18', -2, '2 days before surgery', 135, 87, 73, 45, 'Male', NULL, NULL),
-(1, 'Patient_1', '2025-08-19', -1, '1 day before surgery', 138, 88, 75, 45, 'Male', NULL, NULL),
-(1, 'Patient_1', '2025-08-20', 0, 'Surgery Day', 140, 90, 80, 45, 'Male', NULL, NULL),
-(1, 'Patient_1', '2025-08-21', 1, '1 day after surgery', 142, 91, 82, 45, 'Male', NULL, NULL),
-(2, 'Patient_2', '2025-08-17', -3, '3 days before surgery', 129, 83, 72, 50, 'Female', 'Aspirin', 'Peanuts'),
-(2, 'Patient_2', '2025-08-18', -2, '2 days before surgery', 131, 84, 73, 50, 'Female', 'Aspirin', 'Peanuts'),
-(2, 'Patient_2', '2025-08-19', -1, '1 day before surgery', 133, 85, 74, 50, 'Female', 'Aspirin', 'Peanuts'),
-(2, 'Patient_2', '2025-08-20', 0, 'Surgery Day', 135, 88, 78, 50, 'Female', 'Aspirin', 'Peanuts'),
-(2, 'Patient_2', '2025-08-21', 1, '1 day after surgery', 136, 89, 79, 50, 'Female', 'Aspirin', 'Peanuts'),
-(2, 'Patient_2', '2025-08-22', 2, '2 days after surgery', 138, 90, 80, 50, 'Female', 'Aspirin', 'Peanuts'),
-(3, 'Patient_3', '2025-08-19', -1, '1 day before surgery', 124, 84, 74, 60, 'Male', NULL, NULL),
-(3, 'Patient_3', '2025-08-20', 0, 'Surgery Day', 125, 85, 75, 60, 'Male', NULL, NULL),
-(3, 'Patient_3', '2025-08-21', 1, '1 day after surgery', 127, 86, 77, 60, 'Male', NULL, NULL),
-(3, 'Patient_3', '2025-08-22', 2, '2 days after surgery', 128, 87, 78, 60, 'Male', NULL, NULL),
-(3, 'Patient_3', '2025-08-23', 3, '3 days after surgery', 130, 88, 79, 60, 'Male', NULL, NULL),
-(4, 'Patient_4', '2025-08-16', -4, '4 days before surgery', 132, 86, 76, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-17', -3, '3 days before surgery', 135, 87, 77, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-18', -2, '2 days before surgery', 138, 88, 78, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-19', -1, '1 day before surgery', 140, 90, 80, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-20', 0, 'Surgery Day', 145, 95, 85, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-21', 1, '1 day after surgery', 150, 98, 88, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-22', 2, '2 days after surgery', 155, 100, 90, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-23', 3, '3 days after surgery', 160, 102, 92, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-24', 4, '4 days after surgery', 162, 105, 94, 55, 'Female', NULL, NULL);
-GO
-
--- 4. Calculate moving averages (1 day before & 1 day after) with decimals
-WITH CTE_Moving AS (
-    SELECT 
-        RecordID,
-        AVG(CAST(Systolic AS DECIMAL(5,2))) OVER (
-            PARTITION BY PatientID 
-            ORDER BY RecordDate
-            ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
-        ) AS AvgSystolic_Moving,
-        AVG(CAST(Diastolic AS DECIMAL(5,2))) OVER (
-            PARTITION BY PatientID 
-            ORDER BY RecordDate
-            ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
-        ) AS AvgDiastolic_Moving
-    FROM dbo.BloodPressureRecords
-)
-UPDATE dbo.BloodPressureRecords
-SET AvgSystolic_Moving = CTE_Moving.AvgSystolic_Moving,
-    AvgDiastolic_Moving = CTE_Moving.AvgDiastolic_Moving
-FROM dbo.BloodPressureRecords
-JOIN CTE_Moving ON dbo.BloodPressureRecords.RecordID = CTE_Moving.RecordID;
-GO
-
--- 5. View full BloodPressureRecords table
-SELECT *
-FROM dbo.BloodPressureRecords
+SELECT * FROM dbo.BloodPressureRecords
 ORDER BY PatientID, RecordDate;
-GO
-
--- 6. Drop AlarmingRate if exists
-IF OBJECT_ID('dbo.AlarmingRate', 'U') IS NOT NULL
-    DROP TABLE dbo.AlarmingRate;
-GO
-
--- 7. Create AlarmingRate table
-CREATE TABLE dbo.AlarmingRate (
-    RecordID INT IDENTITY(1,1) PRIMARY KEY,
-    PatientID INT NOT NULL,
-    PatientName NVARCHAR(30) NULL,
-    RecordDate DATE NOT NULL,
-    DaysFromSurgery INT NULL,
-    DayDescription NVARCHAR(30) NULL,
-    Systolic INT NULL,
-    Diastolic INT NULL,
-    HeartRate INT NULL,
-    Age INT NULL,
-    Gender NVARCHAR(10) NULL,
-    Medication NVARCHAR(30) NULL,
-    Allergic NVARCHAR(30) NULL,
-    AvgSystolic_Moving DECIMAL(5,2) NULL,
-    AvgDiastolic_Moving DECIMAL(5,2) NULL
-);
-GO
-
--- 8. Insert only unusual BP records
-INSERT INTO dbo.AlarmingRate
-(PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic, AvgSystolic_Moving, AvgDiastolic_Moving)
-SELECT PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic, AvgSystolic_Moving, AvgDiastolic_Moving
-FROM dbo.BloodPressureRecords
-WHERE AvgSystolic_Moving >= 140
-   OR AvgDiastolic_Moving >= 90
-   OR AvgSystolic_Moving <= 90
-   OR AvgDiastolic_Moving <= 60;
-GO
-
--- 9. View AlarmingRate table
-SELECT *
-FROM dbo.AlarmingRate
-ORDER BY PatientID, RecordDate;
-GO
-
--- 10. Drop HeartRateAlerts if exists
-IF OBJECT_ID('dbo.HeartRateAlerts', 'U') IS NOT NULL
-  DROP TABLE dbo.HeartRateAlerts;
-GO
-
--- 11. Create HeartRateAlerts table
-CREATE TABLE dbo.HeartRateAlerts (
-  RecordID INT IDENTITY(1, 1) PRIMARY KEY,
-  PatientID INT NOT NULL,
-  PatientName NVARCHAR(30) NULL,
-  RecordDate DATE NOT NULL,
-  DaysFromSurgery INT NULL,
-  DayDescription NVARCHAR(30) NULL,
-  HeartRate INT NOT NULL,
-  HeartRateIndicator NVARCHAR(20) NOT NULL
-);
-GO
-
--- 12. Insert extremely high/low heart rate records
--- Assumed thresholds: <= 40 bpm (extremely low), >= 130 btar czf readmes.tgz -C /workspace README.md README_FULL.md
-pm (extremely high)
-INSERT INTO dbo.HeartRateAlerts
-  (PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, HeartRate, HeartRateIndicator)
-SELECT
-  PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, HeartRate,
-  CASE
-    WHEN HeartRate <= 40 THEN 'Extremely Low'
-    WHEN HeartRate >= 130 THEN 'Extremely High'
-  END AS HeartRateIndicator
-FROM dbo.BloodPressureRecords
-WHERE HeartRate <= 40 OR HeartRate >= 130;
-GO
-
--- 13. View HeartRateAlerts table
-SELECT *
-FROM dbo.HeartRateAlerts
-ORDER BY PatientID, RecordDate;
-GO
 ```
 
+#### View High-Risk Patients
+```sql
+SELECT * FROM dbo.majorHeartAttackRisk
+WHERE RiskLevel = 'CRITICAL'
+ORDER BY PatientID, RecordDate;
+```
+
+#### Summary Statistics
+```sql
+SELECT RiskLevel, COUNT(*) AS PatientCount
+FROM dbo.majorHeartAttackRisk
+GROUP BY RiskLevel;
+```
+
+## Clinical Applications
+
+### 1. Pre-Surgery Assessment
+- Identify patients requiring special monitoring
+- Adjust surgical protocols based on risk levels
+- Plan post-operative care requirements
+
+### 2. Post-Surgery Monitoring
+- Track recovery progress
+- Identify complications early
+- Guide medication adjustments
+
+### 3. Risk Management
+- Proactive intervention for high-risk patients
+- Resource allocation for critical care
+- Quality improvement initiatives
+
+## Data Quality Features
+
+### 1. Automatic Data Validation
+- Checks for logical blood pressure ranges
+- Validates heart rate parameters
+- Ensures age-appropriate risk assessments
+
+### 2. Comprehensive Error Handling
+- Graceful table recreation
+- Data integrity preservation
+- Consistent naming conventions
+
+### 3. Audit Trail
+- Complete patient history tracking
+- Timeline-based analysis capabilities
+- Risk factor documentation
+
+## Technical Specifications
+
+### Database Requirements
+- SQL Server compatible
+- Supports DATE data types
+- Window functions for moving averages
+
+### Performance Considerations
+- Indexed primary keys for fast retrieval
+- Efficient moving average calculations
+- Optimized risk assessment queries
+
+### Scalability
+- Modular table design
+- Extensible risk criteria
+- Configurable thresholds
+
+## Maintenance and Updates
+
+### Adding New Risk Factors
+1. Modify the risk assessment logic in Section 16
+2. Update risk factor descriptions
+3. Adjust summary statistics queries
+
+### Modifying Thresholds
+1. Update criteria in INSERT statements
+2. Adjust risk level classifications
+3. Update documentation
+
+### Data Backup
+- Regular backups of all tables
+- Preserve moving average calculations
+- Maintain risk assessment history
+
+## Support and Documentation
+
+### File Structure
+- `SQLFile1.sql`: Main system implementation
+- `README2.md`: This documentation file
+
+### Contact Information
+For technical support or questions about the blood pressure monitoring system, refer to the system administrator or database team.
+
+---
+
+**Version**: 2.0  
+**Last Updated**: 2025  
+**System**: Blood Pressure Monitoring and Risk Assessment  
+**Database**: SurgeryDB
