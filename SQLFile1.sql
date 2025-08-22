@@ -131,8 +131,6 @@ FROM dbo.AlarmingRate
 ORDER BY PatientID, RecordDate;
 GO
 
-
-
 -- 10. Drop HeartRateAlerts if exists
 IF OBJECT_ID('dbo.HeartRateAlerts', 'U') IS NOT NULL
   DROP TABLE dbo.HeartRateAlerts;
@@ -168,5 +166,143 @@ GO
 -- 13. View HeartRateAlerts table
 SELECT *
 FROM dbo.HeartRateAlerts
+ORDER BY PatientID, RecordDate;
+GO
+
+-- ===========================================
+-- Major Heart Attack Risk Assessment
+-- ===========================================
+
+-- 14. Drop majorHeartAttackRisk if exists
+IF OBJECT_ID('dbo.majorHeartAttackRisk', 'U') IS NOT NULL
+    DROP TABLE dbo.majorHeartAttackRisk;
+GO
+
+-- 15. Create majorHeartAttackRisk table
+CREATE TABLE dbo.majorHeartAttackRisk (
+    RecordID INT IDENTITY(1,1) PRIMARY KEY,
+    PatientID INT NOT NULL,
+    PatientName NVARCHAR(30) NULL,
+    RecordDate DATE NOT NULL,
+    DaysFromSurgery INT NULL,
+    DayDescription NVARCHAR(30) NULL,
+    Systolic INT NULL,
+    Diastolic INT NULL,
+    HeartRate INT NULL,
+    Age INT NULL,
+    Gender NVARCHAR(10) NULL,
+    Medication NVARCHAR(30) NULL,
+    Allergic NVARCHAR(30) NULL,
+    RiskFactors NVARCHAR(200) NULL,
+    RiskLevel NVARCHAR(20) NULL,
+    CriticalReason NVARCHAR(300) NULL,
+    AvgSystolic_Moving DECIMAL(5,2) NULL,
+    AvgDiastolic_Moving DECIMAL(5,2) NULL
+);
+GO
+
+-- 16. Insert high-risk patients based on criteria:
+-- - High blood pressure (Systolic >= 140 OR Diastolic >= 90)
+-- - High heart rate (HeartRate >= 100)
+-- - Age >= 45
+INSERT INTO dbo.majorHeartAttackRisk
+(PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic, RiskFactors, RiskLevel, CriticalReason, AvgSystolic_Moving, AvgDiastolic_Moving)
+SELECT 
+    PatientID, 
+    PatientName, 
+    RecordDate, 
+    DaysFromSurgery, 
+    DayDescription, 
+    Systolic, 
+    Diastolic, 
+    HeartRate, 
+    Age, 
+    Gender, 
+    Medication, 
+    Allergic,
+    CASE 
+        WHEN Systolic >= 140 AND Diastolic >= 90 AND HeartRate >= 100 AND Age >= 45 THEN 'High BP + High HR + Age >= 45'
+        WHEN Systolic >= 140 AND HeartRate >= 100 AND Age >= 45 THEN 'High Systolic + High HR + Age >= 45'
+        WHEN Diastolic >= 90 AND HeartRate >= 100 AND Age >= 45 THEN 'High Diastolic + High HR + Age >= 45'
+        WHEN Systolic >= 140 AND Diastolic >= 90 AND Age >= 45 THEN 'High BP + Age >= 45'
+        WHEN HeartRate >= 100 AND Age >= 45 THEN 'High HR + Age >= 45'
+        ELSE 'Multiple Risk Factors'
+    END AS RiskFactors,
+    CASE 
+        WHEN Systolic >= 160 OR Diastolic >= 100 OR HeartRate >= 120 THEN 'CRITICAL'
+        WHEN Systolic >= 140 OR Diastolic >= 90 OR HeartRate >= 100 THEN 'HIGH'
+        ELSE 'MODERATE'
+    END AS RiskLevel,
+    CASE 
+        WHEN Systolic >= 160 THEN CONCAT('CRITICAL: Systolic BP ', Systolic, ' mmHg (Normal: <120, High: 140-159, Critical: >=160)')
+        WHEN Diastolic >= 100 THEN CONCAT('CRITICAL: Diastolic BP ', Diastolic, ' mmHg (Normal: <80, High: 90-99, Critical: >=100)')
+        WHEN HeartRate >= 120 THEN CONCAT('CRITICAL: Heart Rate ', HeartRate, ' bpm (Normal: 60-100, High: 100-119, Critical: >=120)')
+        WHEN Systolic >= 140 THEN CONCAT('HIGH: Systolic BP ', Systolic, ' mmHg (Normal: <120, High: >=140)')
+        WHEN Diastolic >= 90 THEN CONCAT('HIGH: Diastolic BP ', Diastolic, ' mmHg (Normal: <80, High: >=90)')
+        WHEN HeartRate >= 100 THEN CONCAT('HIGH: Heart Rate ', HeartRate, ' bpm (Normal: 60-100, High: >=100)')
+        ELSE CONCAT('MODERATE: Age ', Age, ' (Risk factor: >=45)')
+    END AS CriticalReason,
+    AvgSystolic_Moving,
+    AvgDiastolic_Moving
+FROM dbo.BloodPressureRecords
+WHERE (Systolic >= 140 OR Diastolic >= 90 OR HeartRate >= 100)
+  AND Age >= 45;
+GO
+
+-- 17. View majorHeartAttackRisk table
+SELECT *
+FROM dbo.majorHeartAttackRisk
+ORDER BY PatientID, RecordDate;
+GO
+
+-- 18. View majorHeartAttackRisk table with detailed patient information
+SELECT 
+    PatientID,
+    PatientName,
+    Age,
+    Gender,
+    RecordDate,
+    DayDescription,
+    Systolic,
+    Diastolic,
+    HeartRate,
+    RiskLevel,
+    CriticalReason,
+    RiskFactors
+FROM dbo.majorHeartAttackRisk
+ORDER BY RiskLevel DESC, PatientID, RecordDate;
+GO
+
+-- 19. Summary statistics for major heart attack risk
+SELECT 
+    RiskLevel,
+    COUNT(*) AS PatientCount,
+    AVG(CAST(Age AS DECIMAL(5,2))) AS AvgAge,
+    AVG(CAST(Systolic AS DECIMAL(5,2))) AS AvgSystolic,
+    AVG(CAST(Diastolic AS DECIMAL(5,2))) AS AvgDiastolic,
+    AVG(CAST(HeartRate AS DECIMAL(5,2))) AS AvgHeartRate
+FROM dbo.majorHeartAttackRisk
+GROUP BY RiskLevel
+ORDER BY 
+    CASE RiskLevel 
+        WHEN 'CRITICAL' THEN 1 
+        WHEN 'HIGH' THEN 2 
+        WHEN 'MODERATE' THEN 3 
+    END;
+GO
+
+-- 20. Critical patients detailed breakdown
+SELECT 
+    'High risk' AS Analysis,
+    PatientID,
+    PatientName,
+    Age,
+    DaysFromSurgery,
+    DayDescription,
+    CONCAT(Systolic, '/', Diastolic) AS BloodPressure,
+    HeartRate,
+    CriticalReason
+FROM dbo.majorHeartAttackRisk
+WHERE RiskLevel = 'CRITICAL'
 ORDER BY PatientID, RecordDate;
 GO
