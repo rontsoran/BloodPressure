@@ -1,4 +1,4 @@
-# Blood Pressure Monitoring System - README2
+# Blood Pressure Monitoring System - README
 
 ## Overview
 This SQL-based blood pressure monitoring system is designed to track patient vital signs before and after surgery, with advanced risk assessment capabilities for identifying patients at risk of major heart attacks.
