@@ -1,6 +1,6 @@
 # Blood Pressure Monitoring & Heart Risk Assessment System
 Version 2.0 – Last Updated: 2025  
-Database: SurgeryDB
+Database: Database1
 
 ---
 
@@ -90,7 +90,7 @@ Integrates multiple health factors to determine overall patient risk level.
 ## Key Features
 
 1. **Moving Average Calculations**  
-   - 3-day moving averages for blood pressure and heart rate  
+   - 3-day moving averages for blood pressure  
    - Trend detection and early risk identification  
 
 2. **Surgery Timeline Tracking**  
@@ -109,7 +109,10 @@ Integrates multiple health factors to determine overall patient risk level.
 
 ## Usage Instructions
 
-### Running the System
-1. Execute the main SQL script:  
+### 1. Database Setup
+1. Create the database in your SQL Server environment:  
    ```sql
-   SQLFile1.sql
+   CREATE DATABASE Database1;
+   GO
+   USE Database1;
+   GO
