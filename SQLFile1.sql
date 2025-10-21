@@ -1,16 +1,26 @@
 -- ===========================================
--- Blood Pressure Records - Moving Average 1 Day Before/After Surgery
+-- Blood Pressure Records and Heart Risk Assessment
+-- ===========================================
+-- NOTE: Before running this script, create a database with your desired name.
+-- In this example, the database is named 'Database1'.
+-- You can create it using:
+--     CREATE DATABASE Database1;
+--     GO
 -- ===========================================
 
-USE SurgeryDB;
+USE Database1;
 GO
 
--- 1. Drop BloodPressureRecords if exists
+-- ===========================================
+-- 1. BloodPressureRecords Table
+-- ===========================================
+
+-- Drop BloodPressureRecords table if it exists
 IF OBJECT_ID('dbo.BloodPressureRecords', 'U') IS NOT NULL
     DROP TABLE dbo.BloodPressureRecords;
 GO
 
--- 2. Create BloodPressureRecords table
+-- Create BloodPressureRecords table
 CREATE TABLE dbo.BloodPressureRecords (
     RecordID INT IDENTITY(1,1) PRIMARY KEY,
     PatientID INT NOT NULL,
@@ -30,37 +40,39 @@ CREATE TABLE dbo.BloodPressureRecords (
 );
 GO
 
--- 3. Insert sample records
+-- Insert sample patient records
 INSERT INTO dbo.BloodPressureRecords
-(PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic)
+    (PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic)
 VALUES
-(1, 'Patient_1', '2025-08-18', -2, '2 days before surgery', 135, 87, 73, 45, 'Male', NULL, NULL),
-(1, 'Patient_1', '2025-08-19', -1, '1 day before surgery', 138, 88, 75, 45, 'Male', NULL, NULL),
-(1, 'Patient_1', '2025-08-20', 0, 'Surgery Day', 140, 90, 80, 45, 'Male', NULL, NULL),
-(1, 'Patient_1', '2025-08-21', 1, '1 day after surgery', 142, 91, 82, 45, 'Male', NULL, NULL),
-(2, 'Patient_2', '2025-08-17', -3, '3 days before surgery', 129, 83, 72, 50, 'Female', 'Aspirin', 'Peanuts'),
-(2, 'Patient_2', '2025-08-18', -2, '2 days before surgery', 131, 84, 73, 50, 'Female', 'Aspirin', 'Peanuts'),
-(2, 'Patient_2', '2025-08-19', -1, '1 day before surgery', 133, 85, 74, 50, 'Female', 'Aspirin', 'Peanuts'),
-(2, 'Patient_2', '2025-08-20', 0, 'Surgery Day', 135, 88, 78, 50, 'Female', 'Aspirin', 'Peanuts'),
-(2, 'Patient_2', '2025-08-21', 1, '1 day after surgery', 136, 89, 79, 50, 'Female', 'Aspirin', 'Peanuts'),
-(2, 'Patient_2', '2025-08-22', 2, '2 days after surgery', 138, 90, 80, 50, 'Female', 'Aspirin', 'Peanuts'),
-(3, 'Patient_3', '2025-08-19', -1, '1 day before surgery', 124, 84, 74, 60, 'Male', NULL, NULL),
-(3, 'Patient_3', '2025-08-20', 0, 'Surgery Day', 125, 85, 75, 60, 'Male', NULL, NULL),
-(3, 'Patient_3', '2025-08-21', 1, '1 day after surgery', 127, 86, 77, 60, 'Male', NULL, NULL),
-(3, 'Patient_3', '2025-08-22', 2, '2 days after surgery', 128, 87, 78, 60, 'Male', NULL, NULL),
-(3, 'Patient_3', '2025-08-23', 3, '3 days after surgery', 130, 88, 79, 60, 'Male', NULL, NULL),
-(4, 'Patient_4', '2025-08-16', -4, '4 days before surgery', 132, 86, 76, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-17', -3, '3 days before surgery', 135, 87, 77, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-18', -2, '2 days before surgery', 138, 88, 78, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-19', -1, '1 day before surgery', 140, 90, 80, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-20', 0, 'Surgery Day', 145, 95, 85, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-21', 1, '1 day after surgery', 150, 98, 88, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-22', 2, '2 days after surgery', 155, 100, 90, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-23', 3, '3 days after surgery', 160, 102, 92, 55, 'Female', NULL, NULL),
-(4, 'Patient_4', '2025-08-24', 4, '4 days after surgery', 162, 105, 94, 55, 'Female', NULL, NULL);
+    (1, 'Patient_1', '2025-08-18', -2, '2 days before surgery', 135, 87, 73, 45, 'Male', NULL, NULL),
+    (1, 'Patient_1', '2025-08-19', -1, '1 day before surgery', 138, 88, 75, 45, 'Male', NULL, NULL),
+    (1, 'Patient_1', '2025-08-20', 0, 'Surgery Day', 140, 90, 80, 45, 'Male', NULL, NULL),
+    (1, 'Patient_1', '2025-08-21', 1, '1 day after surgery', 142, 91, 82, 45, 'Male', NULL, NULL),
+    (2, 'Patient_2', '2025-08-17', -3, '3 days before surgery', 129, 83, 72, 50, 'Female', 'Aspirin', 'Peanuts'),
+    (2, 'Patient_2', '2025-08-18', -2, '2 days before surgery', 131, 84, 73, 50, 'Female', 'Aspirin', 'Peanuts'),
+    (2, 'Patient_2', '2025-08-19', -1, '1 day before surgery', 133, 85, 74, 50, 'Female', 'Aspirin', 'Peanuts'),
+    (2, 'Patient_2', '2025-08-20', 0, 'Surgery Day', 135, 88, 78, 50, 'Female', 'Aspirin', 'Peanuts'),
+    (2, 'Patient_2', '2025-08-21', 1, '1 day after surgery', 136, 89, 79, 50, 'Female', 'Aspirin', 'Peanuts'),
+    (2, 'Patient_2', '2025-08-22', 2, '2 days after surgery', 138, 90, 80, 50, 'Female', 'Aspirin', 'Peanuts'),
+    (3, 'Patient_3', '2025-08-19', -1, '1 day before surgery', 124, 84, 74, 60, 'Male', NULL, NULL),
+    (3, 'Patient_3', '2025-08-20', 0, 'Surgery Day', 125, 85, 75, 60, 'Male', NULL, NULL),
+    (3, 'Patient_3', '2025-08-21', 1, '1 day after surgery', 127, 86, 77, 60, 'Male', NULL, NULL),
+    (3, 'Patient_3', '2025-08-22', 2, '2 days after surgery', 128, 87, 78, 60, 'Male', NULL, NULL),
+    (3, 'Patient_3', '2025-08-23', 3, '3 days after surgery', 130, 88, 79, 60, 'Male', NULL, NULL),
+    (4, 'Patient_4', '2025-08-16', -4, '4 days before surgery', 132, 86, 76, 55, 'Female', NULL, NULL),
+    (4, 'Patient_4', '2025-08-17', -3, '3 days before surgery', 135, 87, 77, 55, 'Female', NULL, NULL),
+    (4, 'Patient_4', '2025-08-18', -2, '2 days before surgery', 138, 88, 78, 55, 'Female', NULL, NULL),
+    (4, 'Patient_4', '2025-08-19', -1, '1 day before surgery', 140, 90, 80, 55, 'Female', NULL, NULL),
+    (4, 'Patient_4', '2025-08-20', 0, 'Surgery Day', 145, 95, 85, 55, 'Female', NULL, NULL),
+    (4, 'Patient_4', '2025-08-21', 1, '1 day after surgery', 150, 98, 88, 55, 'Female', NULL, NULL),
+    (4, 'Patient_4', '2025-08-22', 2, '2 days after surgery', 155, 100, 90, 55, 'Female', NULL, NULL),
+    (4, 'Patient_4', '2025-08-23', 3, '3 days after surgery', 160, 102, 92, 55, 'Female', NULL, NULL),
+    (4, 'Patient_4', '2025-08-24', 4, '4 days after surgery', 162, 105, 94, 55, 'Female', NULL, NULL);
 GO
 
--- 4. Calculate moving averages (1 day before & 1 day after) with decimals
+-- ===========================================
+-- 2. Calculate 1-Day Moving Averages
+-- ===========================================
 WITH CTE_Moving AS (
     SELECT 
         RecordID,
@@ -83,18 +95,20 @@ FROM dbo.BloodPressureRecords
 JOIN CTE_Moving ON dbo.BloodPressureRecords.RecordID = CTE_Moving.RecordID;
 GO
 
--- 5. View full BloodPressureRecords table
+-- View updated BloodPressureRecords table
 SELECT *
 FROM dbo.BloodPressureRecords
 ORDER BY PatientID, RecordDate;
 GO
 
--- 6. Drop AlarmingRate if exists
+-- ===========================================
+-- 3. AlarmingRate Table (Abnormal BP)
+-- ===========================================
+
 IF OBJECT_ID('dbo.AlarmingRate', 'U') IS NOT NULL
     DROP TABLE dbo.AlarmingRate;
 GO
 
--- 7. Create AlarmingRate table
 CREATE TABLE dbo.AlarmingRate (
     RecordID INT IDENTITY(1,1) PRIMARY KEY,
     PatientID INT NOT NULL,
@@ -114,10 +128,11 @@ CREATE TABLE dbo.AlarmingRate (
 );
 GO
 
--- 8. Insert only unusual BP records
+-- Insert only unusual BP records
 INSERT INTO dbo.AlarmingRate
-(PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic, AvgSystolic_Moving, AvgDiastolic_Moving)
-SELECT PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic, AvgSystolic_Moving, AvgDiastolic_Moving
+    (PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic, AvgSystolic_Moving, AvgDiastolic_Moving)
+SELECT 
+    PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic, AvgSystolic_Moving, AvgDiastolic_Moving
 FROM dbo.BloodPressureRecords
 WHERE AvgSystolic_Moving >= 140
    OR AvgDiastolic_Moving >= 90
@@ -125,60 +140,59 @@ WHERE AvgSystolic_Moving >= 140
    OR AvgDiastolic_Moving <= 60;
 GO
 
--- 9. View AlarmingRate table
+-- View AlarmingRate table
 SELECT *
 FROM dbo.AlarmingRate
 ORDER BY PatientID, RecordDate;
 GO
 
--- 10. Drop HeartRateAlerts if exists
+-- ===========================================
+-- 4. HeartRateAlerts Table (Extreme HR)
+-- ===========================================
+
 IF OBJECT_ID('dbo.HeartRateAlerts', 'U') IS NOT NULL
-  DROP TABLE dbo.HeartRateAlerts;
+    DROP TABLE dbo.HeartRateAlerts;
 GO
 
--- 11. Create HeartRateAlerts table
 CREATE TABLE dbo.HeartRateAlerts (
-  RecordID INT IDENTITY(1, 1) PRIMARY KEY,
-  PatientID INT NOT NULL,
-  PatientName NVARCHAR(30) NULL,
-  RecordDate DATE NOT NULL,
-  DaysFromSurgery INT NULL,
-  DayDescription NVARCHAR(30) NULL,
-  HeartRate INT NOT NULL,
-  HeartRateIndicator NVARCHAR(20) NOT NULL
+    RecordID INT IDENTITY(1,1) PRIMARY KEY,
+    PatientID INT NOT NULL,
+    PatientName NVARCHAR(30) NULL,
+    RecordDate DATE NOT NULL,
+    DaysFromSurgery INT NULL,
+    DayDescription NVARCHAR(30) NULL,
+    HeartRate INT NOT NULL,
+    HeartRateIndicator NVARCHAR(20) NOT NULL
 );
 GO
 
--- 12. Insert extremely high/low heart rate records
--- Assumed thresholds: <= 40 bpm (extremely low), >= 130 bpm (extremely high)
+-- Insert extremely high or low heart rate records
 INSERT INTO dbo.HeartRateAlerts
-  (PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, HeartRate, HeartRateIndicator)
+    (PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, HeartRate, HeartRateIndicator)
 SELECT
-  PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, HeartRate,
-  CASE
-    WHEN HeartRate <= 40 THEN 'Extremely Low'
-    WHEN HeartRate >= 130 THEN 'Extremely High'
-  END AS HeartRateIndicator
+    PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, HeartRate,
+    CASE
+        WHEN HeartRate <= 40 THEN 'Extremely Low'
+        WHEN HeartRate >= 130 THEN 'Extremely High'
+    END AS HeartRateIndicator
 FROM dbo.BloodPressureRecords
 WHERE HeartRate <= 40 OR HeartRate >= 130;
 GO
 
--- 13. View HeartRateAlerts table
+-- View HeartRateAlerts table
 SELECT *
 FROM dbo.HeartRateAlerts
 ORDER BY PatientID, RecordDate;
 GO
 
 -- ===========================================
--- Major Heart Attack Risk Assessment
+-- 5. MajorHeartAttackRisk Table
 -- ===========================================
 
--- 14. Drop majorHeartAttackRisk if exists
 IF OBJECT_ID('dbo.majorHeartAttackRisk', 'U') IS NOT NULL
     DROP TABLE dbo.majorHeartAttackRisk;
 GO
 
--- 15. Create majorHeartAttackRisk table
 CREATE TABLE dbo.majorHeartAttackRisk (
     RecordID INT IDENTITY(1,1) PRIMARY KEY,
     PatientID INT NOT NULL,
@@ -201,25 +215,11 @@ CREATE TABLE dbo.majorHeartAttackRisk (
 );
 GO
 
--- 16. Insert high-risk patients based on criteria:
--- - High blood pressure (Systolic >= 140 OR Diastolic >= 90)
--- - High heart rate (HeartRate >= 100)
--- - Age >= 45
+-- Insert high-risk patients
 INSERT INTO dbo.majorHeartAttackRisk
-(PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic, RiskFactors, RiskLevel, CriticalReason, AvgSystolic_Moving, AvgDiastolic_Moving)
+    (PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic, RiskFactors, RiskLevel, CriticalReason, AvgSystolic_Moving, AvgDiastolic_Moving)
 SELECT 
-    PatientID, 
-    PatientName, 
-    RecordDate, 
-    DaysFromSurgery, 
-    DayDescription, 
-    Systolic, 
-    Diastolic, 
-    HeartRate, 
-    Age, 
-    Gender, 
-    Medication, 
-    Allergic,
+    PatientID, PatientName, RecordDate, DaysFromSurgery, DayDescription, Systolic, Diastolic, HeartRate, Age, Gender, Medication, Allergic,
     CASE 
         WHEN Systolic >= 140 AND Diastolic >= 90 AND HeartRate >= 100 AND Age >= 45 THEN 'High BP + High HR + Age >= 45'
         WHEN Systolic >= 140 AND HeartRate >= 100 AND Age >= 45 THEN 'High Systolic + High HR + Age >= 45'
@@ -249,31 +249,13 @@ WHERE (Systolic >= 140 OR Diastolic >= 90 OR HeartRate >= 100)
   AND Age >= 45;
 GO
 
--- 17. View majorHeartAttackRisk table
+-- View Major Heart Attack Risk table
 SELECT *
 FROM dbo.majorHeartAttackRisk
 ORDER BY PatientID, RecordDate;
 GO
 
--- 18. View majorHeartAttackRisk table with detailed patient information
-SELECT 
-    PatientID,
-    PatientName,
-    Age,
-    Gender,
-    RecordDate,
-    DayDescription,
-    Systolic,
-    Diastolic,
-    HeartRate,
-    RiskLevel,
-    CriticalReason,
-    RiskFactors
-FROM dbo.majorHeartAttackRisk
-ORDER BY RiskLevel DESC, PatientID, RecordDate;
-GO
-
--- 19. Summary statistics for major heart attack risk
+-- Summary statistics by RiskLevel
 SELECT 
     RiskLevel,
     COUNT(*) AS PatientCount,
@@ -291,7 +273,7 @@ ORDER BY
     END;
 GO
 
--- 20. Critical patients detailed breakdown
+-- Detailed critical patients breakdown
 SELECT 
     'High risk' AS Analysis,
     PatientID,
